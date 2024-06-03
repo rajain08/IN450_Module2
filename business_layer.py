@@ -15,3 +15,21 @@ class BusinessLayer:
 
     def get_in450c_row_count(self):
         return self.data_layer.get_row_count("in450c")
+
+    def get_in450a_data(self):
+        """
+        Fetches all data from the IN450a table.
+        """
+        return self.data_layer.get_data("in450a")
+
+    def get_in450b_data(self):
+        """
+        Fetches all data from the IN450b table.
+        """
+        return self.data_layer.get_data("in450b")
+
+    def get_in450c_data(self):
+        """
+        Fetches all data from the IN450c table.
+        """
+        return self.data_layer.get_data("in450c")

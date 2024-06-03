@@ -45,6 +45,15 @@ class DisplayData:
         self.count_button_c = Button(self.root, text="IN450c Row Count", command=self.get_in450c_count)
         self.count_button_c.pack_forget()
 
+        self.view_data_a_button = Button(self.root, text="View IN450a Data", command=self.get_in450a_data)
+        self.view_data_a_button.pack_forget()
+
+        self.view_data_b_button = Button(self.root, text="View IN450b Data", command=self.get_in450b_data)
+        self.view_data_b_button.pack_forget()
+
+        self.view_data_c_button = Button(self.root, text="View IN450c Data", command=self.get_in450c_data)
+        self.view_data_c_button.pack_forget()
+
         self.root.mainloop()
 
     def login(self):
@@ -62,7 +71,7 @@ class DisplayData:
             self.login_button.config(state="disabled")
         except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
             messagebox.showerror("Error", f"Login failed: {e}")
-        except Exception as e:  # Catch any other unexpected exceptions
+        except Exception as e:
             messagebox.showerror("Error", f"An unexpected error occurred: {e}")
 
     def show_data_section(self):
@@ -75,10 +84,15 @@ class DisplayData:
             self.count_button_a.pack()
             self.names_button_b.pack()
             self.count_button_c.pack()
+            self.view_data_a_button.pack()
+            self.view_data_b_button.pack()
+            self.view_data_c_button.pack()
         elif user == "in450b":
             self.names_button_b.pack()
+            self.view_data_b_button.pack()
         elif user == "in450c":
             self.count_button_c.pack()
+            self.view_data_c_button.pack()
         else:
             messagebox.showerror("Error", "Invalid role. Access denied.")
 
@@ -101,7 +115,7 @@ class DisplayData:
             names = self.business_layer.get_in450b_names()
             self.data_text.delete(1.0, 'end')
 
-            if names:  # Check if any names were retrieved
+            if names:
                 for name in names:
                     self.data_text.insert(END, f"{name[0]} {name[1]}\n")
             else:
@@ -119,6 +133,54 @@ class DisplayData:
             self.data_text.insert(1.0, f"IN450c Row Count: {count}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to retrieve IN450c row count: {e}")
+
+    def get_in450a_data(self):
+        """
+        Fetches and displays all data from the IN450a table.
+        """
+        try:
+            data = self.business_layer.get_in450a_data()
+            self.data_text.delete(1.0, 'end')
+
+            if data:
+                for row in data:
+                    self.data_text.insert(END, f"{row}\n")
+            else:
+                self.data_text.insert(1.0, "No data found in IN450a table.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to retrieve IN450a data: {e}")
+
+    def get_in450b_data(self):
+        """
+        Fetches and displays all data from the IN450b table.
+        """
+        try:
+            data = self.business_layer.get_in450b_data()
+            self.data_text.delete(1.0, 'end')
+
+            if data:
+                for row in data:
+                    self.data_text.insert(END, f"{row}\n")
+            else:
+                self.data_text.insert(1.0, "No data found in IN450b table.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to retrieve IN450b data: {e}")
+
+    def get_in450c_data(self):
+        """
+        Fetches and displays all data from the IN450b table.
+        """
+        try:
+            data = self.business_layer.get_in450c_data()
+            self.data_text.delete(1.0, 'end')
+
+            if data:
+                for row in data:
+                    self.data_text.insert(END, f"{row}\n")
+            else:
+                self.data_text.insert(1.0, "No data found in IN450c table.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to retrieve IN450c data: {e}")
 
 if __name__ == "__main__":
     gui = DisplayData()
