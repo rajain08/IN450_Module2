@@ -1,5 +1,6 @@
-from tkinter import Tk, Label, Button, Text
+from tkinter import Tk, Label, Button, Text, Entry, messagebox, END
 from business_layer import BusinessLayer
+import psycopg2
 
 class DisplayData:
 
@@ -7,59 +8,117 @@ class DisplayData:
         self.root = Tk()
         self.root.title("Database Data Viewer")
 
-        self.business_layer = BusinessLayer()
+        # Login section
+        self.server_label = Label(self.root, text="Server:")
+        self.server_label.pack()
+        self.server_entry = Entry(self.root)
+        self.server_entry.pack()
 
-        self.in450a_label = Label(self.root, text="Table IN450A Data:")
-        self.in450a_label.pack()
-        self.in450a_text = Text(self.root, width=100, height=10)
-        self.in450a_text.pack()
+        self.database_label = Label(self.root, text="Database:")
+        self.database_label.pack()
+        self.database_entry = Entry(self.root)
+        self.database_entry.pack()
 
-        self.in450b_label = Label(self.root, text="Table IN450B Data:")
-        self.in450b_label.pack()
-        self.in450b_text = Text(self.root, width=100, height=10)
-        self.in450b_text.pack()
+        self.user_label = Label(self.root, text="Username:")
+        self.user_label.pack()
+        self.user_entry = Entry(self.root)
+        self.user_entry.pack()
 
-        self.count_button = Button(self.root, text="Get Table IN450A Row Count", command=self.get_row_count)
-        self.count_button.pack()
+        self.password_label = Label(self.root, text="Password:")
+        self.password_label.pack()
+        self.password_entry = Entry(self.root, show="*")
+        self.password_entry.pack()
 
-        self.names_button = Button(self.root, text="Get Table IN450B Names", command=self.get_names)
-        self.names_button.pack()
+        self.login_button = Button(self.root, text="Login", command=self.login)
+        self.login_button.pack()
 
-        self.display_data()
+        # Data display section (initially hidden)
+        self.data_text = Text(self.root, width=100, height=10)
+        self.data_text.pack_forget()
+
+        self.count_button_a = Button(self.root, text="IN450a Row Count", command=self.get_in450a_count)
+        self.count_button_a.pack_forget()
+
+        self.names_button_b = Button(self.root, text="IN450b Names", command=self.get_in450b_names)
+        self.names_button_b.pack_forget()
+
+        self.count_button_c = Button(self.root, text="IN450c Row Count", command=self.get_in450c_count)
+        self.count_button_c.pack_forget()
+
         self.root.mainloop()
 
-    def display_data(self):
+    def login(self):
         """
-        Displays data from in450a and in450b tables in their respective Text widgets.
+        Attempts to login with provided credentials and enables data access based on role.
         """
-        in450a_data = self.business_layer.get_in450a_data()
-        self.in450a_text.delete(1.0, 'end')
-        for row in in450a_data:
-            self.in450a_text.insert('end', f"{row}\n")
+        server = self.server_entry.get()
+        database = self.database_entry.get()
+        user = self.user_entry.get()
+        password = self.password_entry.get()
 
-        in450b_data = self.business_layer.get_in450b_data()
-        self.in450b_text.delete(1.0, 'end')
-        for row in in450b_data:
-            self.in450b_text.insert('end', f"{row}\n")
+        try:
+            self.business_layer = BusinessLayer(server, database, user, password)
+            self.show_data_section()
+            self.login_button.config(state="disabled")
+        except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+            messagebox.showerror("Error", f"Login failed: {e}")
+        except Exception as e:  # Catch any other unexpected exceptions
+            messagebox.showerror("Error", f"An unexpected error occurred: {e}")
 
-    def get_row_count(self):
+    def show_data_section(self):
+        """
+        Shows the data display section and enables buttons based on user role.
+        """
+        self.data_text.pack()
+        user = self.user_entry.get()
+        if user == "in450a":
+            self.count_button_a.pack()
+            self.names_button_b.pack()
+            self.count_button_c.pack()
+        elif user == "in450b":
+            self.names_button_b.pack()
+        elif user == "in450c":
+            self.count_button_c.pack()
+        else:
+            messagebox.showerror("Error", "Invalid role. Access denied.")
+
+    def get_in450a_count(self):
         """
         Fetches and displays the number of rows in the in450a table.
         """
-        count = self.business_layer.get_in450a_row_count()
-        message = f"Number of rows in in450a: {count}"
-        self.in450a_text.delete(1.0, 'end')
-        self.in450a_text.insert('end', message)
+        try:
+            count = self.business_layer.get_in450a_row_count()
+            self.data_text.delete(1.0, 'end')
+            self.data_text.insert(1.0, f"IN450a Row Count: {count}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to retrieve IN450a row count: {e}")
 
-    def get_names(self):
+    def get_in450b_names(self):
         """
-        Fetches and displays a list of first and last names from the in450b table.
+        Fetches and displays first and last names from the IN450b table.
         """
-        names = self.business_layer.get_in450b_names()
-        self.in450b_text.delete(1.0, 'end')
-        for name in names:
-            self.in450b_text.insert('end', f"{name}\n")
+        try:
+            names = self.business_layer.get_in450b_names()
+            self.data_text.delete(1.0, 'end')
 
+            if names:  # Check if any names were retrieved
+                for name in names:
+                    self.data_text.insert(END, f"{name[0]} {name[1]}\n")
+            else:
+                self.data_text.insert(1.0, "No names found in IN450b table.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to retrieve names from IN450b: {e}")
+
+    def get_in450c_count(self):
+        """
+        Fetches and displays the number of rows in the in450c table.
+        """
+        try:
+            count = self.business_layer.get_in450c_row_count()
+            self.data_text.delete(1.0, 'end')
+            self.data_text.insert(1.0, f"IN450c Row Count: {count}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to retrieve IN450c row count: {e}")
 
 if __name__ == "__main__":
     gui = DisplayData()
